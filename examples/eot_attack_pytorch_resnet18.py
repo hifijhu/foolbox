@@ -14,7 +14,7 @@ from foolbox import PyTorchModel, accuracy, samples
 from foolbox.attacks import LinfPGD
 from foolbox.models import ExpectationOverTransformationWrapper
 
-
+            
 class RandomizedResNet18(torch.nn.Module):
     def __init__(self) -> None:
 
@@ -32,7 +32,7 @@ class RandomizedResNet18(torch.nn.Module):
         x = self.transforms(x)
 
         return self.model(x)
-
+        
 
 def main() -> None:
     # instantiate a model (could also be a TensorFlow or JAX model)

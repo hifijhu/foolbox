@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 This test is used to test all attack apis from foolbox on the DCU and 
-I really hope there would no dependency problem.
+I really hope there would no dependency problem. :(
 env: 
     docker 19.03.09:
         OS: Ubuntu 22.04
@@ -21,8 +21,6 @@ from foolbox import PyTorchModel, accuracy, samples
 import foolbox.attacks as atks
 from foolbox.attacks import LinfPGD
 
-import inspect
-
 def main() -> None:
     # instantiate a model (could also be a TensorFlow or JAX model)
     model = models.resnet18(pretrained=True).eval()
@@ -38,8 +36,9 @@ def main() -> None:
 
     # apply the attack
     attacks = [
+        
         atks.L2ContrastReductionAttack,
-        atks.VirtualAdversarialAttack,
+        atks.VirtualAdversarialAttack, # failed
         atks.DDNAttack,
         atks.L2ProjectedGradientDescentAttack,
         atks.LinfProjectedGradientDescentAttack,
@@ -58,74 +57,62 @@ def main() -> None:
         atks.L2ClippingAwareRepeatedAdditiveGaussianNoiseAttack,
         atks.L2ClippingAwareRepeatedAdditiveUniformNoiseAttack,
         atks.LinfRepeatedAdditiveUniformNoiseAttack,
-        atks.InversionAttack,
-        atks.BinarySearchContrastReductionAttack,
+        atks.InversionAttack, # failed
+        atks.BinarySearchContrastReductionAttack, # failed
         atks.LinearSearchContrastReductionAttack,
 
-        atks.HopSkipJumpAttack,
+        # atks.HopSkipJumpAttack, OOM
 
-        atks.L2CarliniWagnerAttack,
+        # atks.L2CarliniWagnerAttack, timeout
         atks.NewtonFoolAttack,
-        atks.EADAttack,
-        atks.GaussianBlurAttack,
+        # atks.EADAttack, timeout
+        atks.GaussianBlurAttack, # failed
         atks.L2DeepFoolAttack,
         atks.LinfDeepFoolAttack,
         atks.SaltAndPepperNoiseAttack,
-        atks.LinearSearchBlendedUniformNoiseAttack,
-        atks.BinarizationRefinementAttack,
-        atks.DatasetAttack,
+        atks.LinearSearchBlendedUniformNoiseAttack, # failed
+        atks.BinarizationRefinementAttack, # failed
+        atks.DatasetAttack,  # failed
         atks.BoundaryAttack,
-        atks.L0BrendelBethgeAttack,
-        atks.L1BrendelBethgeAttack,
+        # atks.L0BrendelBethgeAttack, timeout and DCU dont work
+        # atks.L1BrendelBethgeAttack, userwarning and block the process
+        
+
+
+    ]
+    attacks_two =[
         atks.L2BrendelBethgeAttack,
-        atks.LinfinityBrendelBethgeAttack,
-        atks.L0FMNAttack,
+        # atks.LinfinityBrendelBethgeAttack, timeout and DCU dont work
+        atks.L0FMNAttack, # failed
         atks.L1FMNAttack,
         atks.L2FMNAttack,
         atks.LInfFMNAttack,
-        atks.PointwiseAttack,
+        atks.PointwiseAttack, # failed
 
         atks.FGM,
         atks.FGSM,
         atks.L2PGD,
-        atks.LinfPGD,
+        atks.LinfPGD, 
         atks.PGD
-
     ]
 
 
     errorList = []
     for attack in attacks:
-        print(f"current test api: {attack.__str__():s}")
+        print(f"current test api: {attack.__name__}")
         try:
-                
-            attack = LinfPGD()
-            epsilons = 0.1
-            raw_advs, clipped_advs, success = attack(fmodel, images, labels, epsilons=epsilons)
+            epsilons = [0.1]
+            raw_advs, clipped_advs, success = attack()(fmodel, images, labels, epsilons=epsilons)
 
             # calculate and report the robust accuracy (the accuracy of the model when
             # it is attacked)
             robust_accuracy = 1 - success.float32().mean(axis=-1)
             print("robust accuracy for perturbations with")
             
-            print(f"  Linf norm ≤ {eps:<6}: {acc.item() * 100:4.1f} %")
+            print(f"  Linf norm ≤ {epsilons[0]:<6}: {robust_accuracy.item() * 100:4.1f} %")
 
-            # we can also manually check this
-            # we will use the clipped advs instead of the raw advs, otherwise
-            # we would need to check if the perturbation sizes are actually
-            # within the specified epsilon bound
-            print("manually chech the robust accuracy for perturbations with")
-
-            acc2 = accuracy(fmodel, advs_, labels)
-            print(f"  Linf norm ≤ {eps:<6}: {acc2 * 100:4.1f} %")
-            print("    perturbation sizes:")
-            perturbation_sizes = (advs_ - images).norms.linf(axis=(1, 2, 3)).numpy()
-            print("    ", str(perturbation_sizes).replace("\n", "\n" + "    "))
-            if acc2 == 0:
-                break
-            print("OK")
         except Exception as e:
-            print(f"An error Occured:{e} while testing api {attack.__str__()}")
+            print(f"An error Occured:{e} while testing api {attack.__name__}")
             errorList.append(attack)
             continue
 
@@ -133,10 +120,12 @@ def main() -> None:
     if len(errorList) == 0:
         print("Congratulation! All api had passed the test!")
     else:
+        print(f"Not passed/Amount: {len(errorList)}/{len(attacks)}")
         print("Sorry to tell you that the following api hasn't pass the test:")
         for item in errorList:
-            print(item__str__())
+            print(item.__name__)
     
 if __name__ == "__main__":
     main()
+
     
