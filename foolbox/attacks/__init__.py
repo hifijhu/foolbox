@@ -77,6 +77,7 @@ from .fast_minimum_norm import (  # noqa: F401
 from .gen_attack import GenAttack  # noqa: F401
 from .pointwise import PointwiseAttack  # noqa: F401
 
+from .LM_attack import LagrangianMarkovAttack
 # from .blended_noise import LinearSearchBlendedUniformNoiseAttack  # noqa: F401
 # from .brendel_bethge import (  # noqa: F401
 #     L0BrendelBethgeAttack,
@@ -104,3 +105,5 @@ L1AdamPGD = L1AdamProjectedGradientDescentAttack
 L2AdamPGD = L2AdamProjectedGradientDescentAttack
 LinfAdamPGD = LinfAdamProjectedGradientDescentAttack
 AdamPGD = LinfAdamPGD
+
+from .BayesianConfidenceAttack import BayesianConfidenceAttack

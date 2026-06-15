@@ -16,14 +16,14 @@ Plus, thanks to the examples given by https://github.com/wielandbrendel/brendel_
 """
 import torchvision.models as models
 import eagerpy as ep
-from foolbox import PyTorchModel, accuracy, samples
+from foolbox import PyTorchModel, accuracy, samples  
 import foolbox.attacks as atks
 
 
 def main() -> None:
     # instantiate a model (could also be a TensorFlow or JAX model)
     model = models.resnet18(pretrained=True).eval()
-    preprocessing = dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3)
+    preprocessing = dict(mean=[0.485,  0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3)
     fmodel = PyTorchModel(model, bounds=(0, 1), preprocessing=preprocessing)
 
     # get data and test the model
@@ -32,7 +32,7 @@ def main() -> None:
     images, labels = ep.astensors(*samples(fmodel, dataset="imagenet", batchsize=16))
     clean_acc = accuracy(fmodel, images, labels)
     print(f"clean accuracy:  {clean_acc * 100:.1f} %")
-
+    
     # apply the attack
     attack = atks.VirtualAdversarialAttack(steps=10)
     print(f"current test api: {attack.__class__.__name__}")
@@ -51,4 +51,4 @@ def main() -> None:
 if __name__ == "__main__":
     main()
 
-    
+       

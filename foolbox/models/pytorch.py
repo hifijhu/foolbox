@@ -40,6 +40,7 @@ class PyTorchModel(ModelWithPreprocessing):
                 )
 
         device = get_device(device)
+        # print(f"the model device is {device}")
         model = model.to(device)
         dummy = ep.torch.zeros(0, device=device)
 

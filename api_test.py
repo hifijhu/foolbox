@@ -23,16 +23,6 @@ from foolbox.attacks import LinfPGD
 
 def main() -> None:
     # instantiate a model (could also be a TensorFlow or JAX model)
-    model = models.resnet18(pretrained=True).eval()
-    preprocessing = dict(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], axis=-3)
-    fmodel = PyTorchModel(model, bounds=(0, 1), preprocessing=preprocessing)
-
-    # get data and test the model
-    # wrapping the tensors with ep.astensors is optional, but it allows
-    # us to work with EagerPy tensors in the following
-    images, labels = ep.astensors(*samples(fmodel, dataset="imagenet", batchsize=16))
-    clean_acc = accuracy(fmodel, images, labels)
-    print(f"clean accuracy:  {clean_acc * 100:.1f} %")
 
     # apply the attack
     attacks = [
@@ -76,11 +66,6 @@ def main() -> None:
         atks.BoundaryAttack,
         # atks.L0BrendelBethgeAttack, timeout and DCU dont work
         # atks.L1BrendelBethgeAttack, userwarning and block the process
-        
-
-
-    ]
-    attacks_two =[
         atks.L2BrendelBethgeAttack,
         # atks.LinfinityBrendelBethgeAttack, timeout and DCU dont work
         atks.L0FMNAttack, # failed
@@ -94,36 +79,26 @@ def main() -> None:
         atks.L2PGD,
         atks.LinfPGD, 
         atks.PGD
+
+
+    ]
+    attacks_two =[
+
     ]
 
 
-    errorList = []
+    l1 = []
     for attack in attacks:
-        print(f"current test api: {attack.__name__}")
         try:
-            epsilons = [0.1]
-            raw_advs, clipped_advs, success = attack()(fmodel, images, labels, epsilons=epsilons)
-
-            # calculate and report the robust accuracy (the accuracy of the model when
-            # it is attacked)
-            robust_accuracy = 1 - success.float32().mean(axis=-1)
-            print("robust accuracy for perturbations with")
+            atk = attack(steps=10)
             
-            print(f"  Linf norm ≤ {epsilons[0]:<6}: {robust_accuracy.item() * 100:4.1f} %")
-
+            if hasattr(atk, "steps"):
+                l1.append(attack)
         except Exception as e:
-            print(f"An error Occured:{e} while testing api {attack.__name__}")
-            errorList.append(attack)
             continue
+    for item in l1:
+        print(f"'{item.__name__}',")
 
-
-    if len(errorList) == 0:
-        print("Congratulation! All api had passed the test!")
-    else:
-        print(f"Not passed/Amount: {len(errorList)}/{len(attacks)}")
-        print("Sorry to tell you that the following api hasn't pass the test:")
-        for item in errorList:
-            print(item.__name__)
     
 if __name__ == "__main__":
     main()
